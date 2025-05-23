@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Top2 餐廳資訊</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Noto+Serif+TC&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    body {
+      margin: 0;
+      background: #fff7f0;
+      font-family: 'Playfair Display', 'Noto Serif TC', serif;
+    }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+    }
+    .nav h1 {
+      font-size: 2.5rem;
+      margin: 0;
+    }
+    .breadcrumb {
+      font-size: 0.95rem;
+      color: #777;
+    }
+    .breadcrumb a {
+      color: #777;
+      text-decoration: none;
+      margin: 0 0.3rem;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 2rem;
+      gap: 2rem;
+    }
+    .chart-box, .map-box {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      width: 480px;
+      border: 1px solid #d89f72;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .chart-box.show, .map-box.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #map {
+      height: 300px;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      background: #d89f72;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      text-decoration: none;
+      border-radius: 8px;
+      display: inline-block;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <h1 id="page-title">What do I recommend?</h1>
+    <div class="breadcrumb">
+      <a href="app.html">Home</a> / <a href="afterwork.html">Function</a> / <a href="afterwork_pr.html">Ranking</a>
+    </div>
+  </div>
+
+  <p style="text-align:center; color:#666;">從雷達圖看服務品質，從地圖找尋幸福味道的方向！</p>
+
+  <div class="container">
+    <div class="chart-box" id="chartBox">
+      <canvas id="radarChart"></canvas>
+    </div>
+    <div class="map-box" id="mapBox">
+      <div id="map"></div>
+      <div>
+        <strong>📍 店家資訊</strong><br />
+        <span id="address">地址載入中...</span><br />
+        <span id="hours">營業時間載入中...</span><br />
+        <a id="navigate-link" href="#" class="btn" target="_blank">導航前往</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTEpshlGdAqh61TjcL1fP7ubDHszT-b5-n7aDArCxES5I9jl-5R_P86hpR_dg0w8kO0kPTZem2zODAC/pub?output=csv";
+
+    Papa.parse(csvUrl, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        const data = results.data;
+        const validData = data.filter(row =>
+          row && !isNaN(row["價格"]) && !isNaN(row["服務"]) && !isNaN(row["品質"])
+        );
+        const top2 = validData.sort((a, b) => parseFloat(b["價格"]) - parseFloat(a["價格"]))[1];
+
+        document.getElementById("page-title").textContent = top2["商店"];
+        document.getElementById("navigate-link").textContent = `導航前往 ${top2["商店"]}`;
+
+        new Chart(document.getElementById("radarChart"), {
+          type: 'radar',
+          data: {
+            labels: ["價格", "服務", "品質"],
+            datasets: [{
+              label: '', // 移除圖表上的商店名稱
+              data: [parseFloat(top2["價格"]), parseFloat(top2["服務"]), parseFloat(top2["品質"])],
+              backgroundColor: "rgba(216, 159, 114, 0.3)",
+              borderColor: "#eec4a6",
+              pointBackgroundColor: "#eec4a6"
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false } // 移除小方框與標籤
+            },
+            scales: {
+              r: {
+                suggestedMin: 0,
+                suggestedMax: 1,
+                ticks: { color: "#000", font: { size: 14 } },
+                pointLabels: { color: "#000", font: { size: 16 } },
+                grid: { color: "rgba(0,0,0,0.1)" }
+              }
+            }
+          }
+        });
+
+        const map = L.map('map').setView([25.0616, 121.5222], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        L.marker([25.0616, 121.5222]).addTo(map)
+          .bindPopup(`<b>${top2["商店"]}</b>`)
+          .openPopup();
+
+        document.getElementById("address").textContent = `地址：Google 上查詢中...`;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${top2["商店"]}`)
+          .then(res => res.json())
+          .then(loc => {
+            if (loc.length > 0) {
+              const lat = parseFloat(loc[0].lat);
+              const lon = parseFloat(loc[0].lon);
+              map.setView([lat, lon], 17);
+              L.marker([lat, lon]).addTo(map)
+                .bindPopup(`<b>${top2["商店"]}</b>`)
+                .openPopup();
+              document.getElementById("address").textContent = `地址：${loc[0].display_name}`;
+              document.getElementById("navigate-link").href = `https://www.google.com/maps?q=${encodeURIComponent(loc[0].display_name)}`;
+            } else {
+              document.getElementById("address").textContent = "地址：查無資料";
+            }
+          });
+        document.getElementById("hours").textContent = "營業時間：請參閱 Google 地圖頁面";
+
+        setTimeout(() => {
+          document.getElementById("chartBox").classList.add("show");
+          document.getElementById("mapBox").classList.add("show");
+        }, 200);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>下班隨便吃</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fff8f0;
+      padding: 2rem;
+      color: #333;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      margin-bottom: 1rem;
+    }
+
+    .category {
+      margin-bottom: 2rem;
+    }
+
+    .category h2 {
+      border-bottom: 2px solid #ccc;
+      padding-bottom: 0.5rem;
+    }
+
+    ul {
+      padding-left: 1.5rem;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 2rem;
+      text-decoration: none;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>下班隨便吃</h1>
+
+  <div class="category">
+    <h2>餐廳服務</h2>
+    <ul>
+      <li>快速出餐</li>
+      <li>無需訂位</li>
+      <li>可外帶/外送</li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>食物價格</h2>
+    <ul>
+      <li>主餐約 NT$150~300</li>
+      <li>套餐優惠多</li>
+      <li>CP 值高</li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>食物品質</h2>
+    <ul>
+      <li>家常口味</li>
+      <li>用料實在</li>
+      <li>不定期更換菜單</li>
+    </ul>
+  </div>
+
+  <a href="index.html">← 返回首頁</a>
+</body>
+</html>
